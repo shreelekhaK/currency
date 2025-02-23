@@ -1,58 +1,48 @@
-const BASE_URL ="https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies";
-const dropdowns=document.querySelectorAll(".dropdown select");
-const btn = document.querySelector("form button");
-const fromCurr = document.querySelector(".from select");
-const toCurr = document.querySelector(".to select");
-const msg = document.querySelector(".msg");
+const API_KEY = "05c5d90fd9614bd05fd984d9"; // Replace with your actual API key
+const BASE_URL = `https://v6.exchangerate-api.com/v6/${API_KEY}/latest`;
 
-for (let select of dropdowns) {
-    for (currCode in countryList) {
-      let newOption = document.createElement("option");
-      newOption.innerText = currCode;
-      newOption.value = currCode;
-      if (select.name === "from" && currCode === "USD") {
-        newOption.selected = "selected";
-      } else if (select.name === "to" && currCode === "INR") {
-        newOption.selected = "selected";
-      }
-      select.append(newOption);
-    }
-  
-    select.addEventListener("change", (evt) => {
-      updateFlag(evt.target);
-    });
-  }
-
+// Function to fetch and update exchange rate
 const updateExchangeRate = async () => {
-  let amount = document.querySelector(".amount input");
-  let amtVal = amount.value;
-  if (amtVal === "" || amtVal < 1) {
-    amtVal = 1;
-    amount.value = "1";
-  }
-  const URL = `${BASE_URL}/${fromCurr.value.toLowerCase()}/${toCurr.value.toLowerCase()}.json`;
-  let response = await fetch(URL);
-  let data = await response.json();
-  let rate = data[toCurr.value.toLowerCase()];
+    let amount = document.querySelector(".amount input");
+    let fromCurr = document.querySelector("select[name='from']");
+    let toCurr = document.querySelector("select[name='to']");
+    let msg = document.querySelector(".msg");
 
-  let finalAmount = amtVal * rate;
-  msg.innerText = `${amtVal} ${fromCurr.value} = ${finalAmount} ${toCurr.value}`;
-};  
-const updateFlag = (element) => {
-    let currCode = element.value;
-    let countryCode = countryList[currCode];
-    let newSrc = `https://flagsapi.com/${countryCode}/flat/64.png`;
-    let img = element.parentElement.querySelector("img");
-    img.src = newSrc;
+    let amtVal = amount.value;
+    if (amtVal === "" || amtVal < 1) {
+        amtVal = 1;
+        amount.value = "1";
+    }
+
+    const from = fromCurr.value;
+    const to = toCurr.value;
+
+    const URL = `${BASE_URL}/${from}`;
+    console.log("Fetching:", URL); // Debugging
+
+    try {
+        let response = await fetch(URL);
+        if (!response.ok) {
+            throw new Error("Network response was not ok");
+        }
+        let data = await response.json();
+        console.log("API Response:", data); // Debugging
+
+        let rate = data.conversion_rates[to];
+        if (!rate) {
+            throw new Error("Invalid exchange rate data");
+        }
+
+        let finalAmount = amtVal * rate;
+        msg.innerText = `${amtVal} ${from} = ${finalAmount.toFixed(2)} ${to}`;
+    } catch (error) {
+        console.error("Error fetching exchange rate:", error);
+        msg.innerText = "Failed to fetch exchange rate.";
+    }
 };
 
-btn.addEventListener("click", (evt) => {
-    evt.preventDefault();
+// Add event listener to the button
+document.querySelector("button").addEventListener("click", (e) => {
+    e.preventDefault(); // Prevent form submission
     updateExchangeRate();
-  });
-  
-  window.addEventListener("load", () => {
-    updateExchangeRate();
-  });
-  
-    
+});
